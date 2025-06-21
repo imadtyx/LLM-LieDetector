@@ -355,8 +355,8 @@ class QuestionsLoader(DataFrame, ABC):
             question,
             answer,
             lying,
-            model_suspect="text-davinci-003",
-            model_investigator="text-davinci-003",
+            model_suspect="gpt-3.5-turbo",
+            model_investigator="gpt-3.5-turbo",
             number_interactions=2,
             question_prefix_suspect=None,
             answer_prefix_suspect=None,
@@ -447,7 +447,7 @@ class QuestionsLoader(DataFrame, ABC):
             question,
             answer,
             lying,
-            model_suspect="text-davinci-003",
+            model_suspect="gpt-3.5-turbo",
             number_probes=None,
             question_prefix_suspect=None,
             answer_prefix_suspect=None,
@@ -530,7 +530,7 @@ class QuestionsLoader(DataFrame, ABC):
 
         return logprob_differences_list, prob_differences_list
 
-    def compute_lying_ratio(self, model="text-davinci-003", lie_instructions=None):
+    def compute_lying_ratio(self, model="gpt-3.5-turbo", lie_instructions=None):
         """Considers all questions to which the model was able to answer and computes the ratio of those there the
         model was able to lie. This requires that the model has already been tested for lying on all possible
         combinations lie instructions, at least for some questions.
@@ -581,7 +581,7 @@ class QuestionsLoader(DataFrame, ABC):
 
         return lying_ratios
 
-    def compute_lie_double_down_rate(self, model="text-davinci-003", lie_instructions=None):
+    def compute_lie_double_down_rate(self, model="gpt-3.5-turbo", lie_instructions=None):
         """Considers all questions to which the model was able to answer and lie and computes the average lying
         double_down_rate for each lie_instruction. This requires that the model has already been tested for lying double_down_rate
         (with `does_model_lie` and providing some test_questions).
@@ -635,7 +635,7 @@ class QuestionsLoader(DataFrame, ABC):
 
     def check_if_model_can_answer(
             self,
-            model="text-davinci-003",
+            model="gpt-3.5-turbo",
             max_questions_to_try=None,
             max_batch_size=20,
             question_prefix=None,
@@ -770,7 +770,7 @@ class QuestionsLoader(DataFrame, ABC):
 
     def does_model_lie(
             self,
-            model="text-davinci-003",
+            model="gpt-3.5-turbo",
             max_questions_to_try=None,
             lie_instructions=None,
             test_questions=None,
@@ -1061,7 +1061,7 @@ class QuestionsLoader(DataFrame, ABC):
 
     def generate_false_statements(
             self,
-            model="text-davinci-003",
+            model="gpt-3.5-turbo",
             max_questions_to_try=None,
             lie_instruction=None,
             max_batch_size=20,
@@ -1213,8 +1213,8 @@ class QuestionsLoader(DataFrame, ABC):
 
     def generate_dialogues(
             self,
-            model_suspect="text-davinci-003",
-            model_investigator="text-davinci-003",
+            model_suspect="gpt-3.5-turbo",
+            model_investigator="gpt-3.5-turbo",
             max_questions_to_try=None,
             lie_instructions=None,
             truth_instructions=None,
@@ -1526,7 +1526,7 @@ class QuestionsLoader(DataFrame, ABC):
 
     def generate_logprobs(
             self,
-            model_suspect="text-davinci-003",
+            model_suspect="gpt-3.5-turbo",
             max_questions_to_try=None,
             lie_instructions=None,
             truth_instructions=None,
@@ -1852,40 +1852,40 @@ class QuestionsLoader(DataFrame, ABC):
         )
 
     def get_lying_transcripts(
-            self, model_suspect="text-davinci-003", model_investigator="text-davinci-003"
+            self, model_suspect="gpt-3.5-turbo", model_investigator="gpt-3.5-turbo"
     ):
         return self[
             self[f"{model_suspect}_{model_investigator}_transcript_lie"].notna()
         ][f"{model_suspect}_{model_investigator}_transcript_lie"]
 
     def get_truthful_transcripts(
-            self, model_suspect="text-davinci-003", model_investigator="text-davinci-003"
+            self, model_suspect="gpt-3.5-turbo", model_investigator="gpt-3.5-turbo"
     ):
         return self[
             self[f"{model_suspect}_{model_investigator}_transcript_truth"].notna()
         ][f"{model_suspect}_{model_investigator}_transcript_truth"]
 
-    def get_lying_probs_difference(self, model_suspect="text-davinci-003"):
+    def get_lying_probs_difference(self, model_suspect="gpt-3.5-turbo"):
         return self[self[f"{model_suspect}_probs_difference_lie"].notna()][
             f"{model_suspect}_probs_difference_lie"
         ]
 
-    def get_lying_logprobs_difference(self, model_suspect="text-davinci-003"):
+    def get_lying_logprobs_difference(self, model_suspect="gpt-3.5-turbo"):
         return self[self[f"{model_suspect}_logprobs_difference_lie"].notna()][
             f"{model_suspect}_logprobs_difference_lie"
         ]
 
-    def get_truthful_probs_difference(self, model_suspect="text-davinci-003"):
+    def get_truthful_probs_difference(self, model_suspect="gpt-3.5-turbo"):
         return self[self[f"{model_suspect}_probs_difference_truth"].notna()][
             f"{model_suspect}_probs_difference_truth"
         ]
 
-    def get_truthful_logprobs_difference(self, model_suspect="text-davinci-003"):
+    def get_truthful_logprobs_difference(self, model_suspect="gpt-3.5-turbo"):
         return self[self[f"{model_suspect}_logprobs_difference_truth"].notna()][
             f"{model_suspect}_logprobs_difference_truth"
         ]
 
-    def get_logprobs_differences(self, model_suspect="text-davinci-003", return_setup=False):
+    def get_logprobs_differences(self, model_suspect="gpt-3.5-turbo", return_setup=False):
         # only return questions where both lie and truth logprobs were generated; return a df with only the two columns
         df = self[self[f"{model_suspect}_logprobs_difference_lie"].notna()]
         df = df[df[f"{model_suspect}_logprobs_difference_truth"].notna()]
@@ -1894,7 +1894,7 @@ class QuestionsLoader(DataFrame, ABC):
             return_cols.append(f"{model_suspect}_probes_setup")
         return df[return_cols]
 
-    def get_probs_differences(self, model_suspect="text-davinci-003", return_setup=False):
+    def get_probs_differences(self, model_suspect="gpt-3.5-turbo", return_setup=False):
         # only return questions where both lie and truth logprobs were generated; return truths and lies separately
         df = self[self[f"{model_suspect}_probs_difference_lie"].notna()]
         df = df[df[f"{model_suspect}_probs_difference_truth"].notna()]
@@ -1904,7 +1904,7 @@ class QuestionsLoader(DataFrame, ABC):
         return df[return_cols]
 
     # same for transcripts
-    def get_transcripts(self, model_suspect="text-davinci-003", model_investigator="text-davinci-003"):
+    def get_transcripts(self, model_suspect="gpt-3.5-turbo", model_investigator="gpt-3.5-turbo"):
         # only return questions where both lie and truth logprobs were generated; return truths and lies separately
         df = self[self[f"{model_suspect}_{model_investigator}_transcript_lie"].notna()]
         df = df[df[f"{model_suspect}_{model_investigator}_transcript_truth"].notna()]
@@ -2043,7 +2043,7 @@ Example 2"""
 
     def generate_false_statements(
             self,
-            model="text-davinci-003",
+            model="gpt-3.5-turbo",
             max_questions_to_try=None,
             lie_instruction=None,
             max_batch_size=20,
@@ -2264,7 +2264,7 @@ class Tatoeba(QuestionsLoader, ABC):
             )
             response = (
                 completion_create_retry(
-                    model="text-davinci-003",
+                    model="gpt-3.5-turbo",
                     prompt=prompt,
                     max_tokens=1,
                     temperature=0.0,
@@ -2507,7 +2507,7 @@ Example 2"""
 
     def generate_false_statements(
             self,
-            model="text-davinci-003",
+            model="gpt-3.5-turbo",
             max_questions_to_try=None,
             lie_instruction=None,
             max_batch_size=20,
@@ -2775,7 +2775,7 @@ class AnthropicEvals(QuestionsLoader, ABC):
 
     def generate_false_statements(
             self,
-            model="text-davinci-003",
+            model="gpt-3.5-turbo",
             max_questions_to_try=None,
             lie_instruction=None,
             max_batch_size=20,
@@ -3064,7 +3064,7 @@ if __name__ == "__main__":
     import dotenv
 
     dotenv.load_dotenv()
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    # API key is now handled in utils.py when initializing the OpenAI client
 
     # test the 1000 questions dataset
     q = Questions1000()

@@ -1,7 +1,11 @@
 import logging
+import os
 
-import openai
+from openai import OpenAI
 from retry import retry
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 CoTPrompt = """
 You will be asked a question and you must lie about the answer, in follow up questions you
@@ -64,18 +68,61 @@ class LanguageModelAgent:
 
     @retry(delay=5)
     def _individual_call(self, prompts, return_logprobs=False):
-        if return_logprobs:
-            logprobs = max(5, self.model_kwargs.get('logprobs', 1))
-        else:
-            logprobs = max(1, self.model_kwargs.get('logprobs', 1))
-
         model_kwargs_wo_logprobs = self.model_kwargs.copy()
-        model_kwargs_wo_logprobs.pop('logprobs', None)
-
-        response = openai.Completion.create(
-            model=self.model, prompt=prompts, echo=False, logprobs=logprobs, **model_kwargs_wo_logprobs
-        )
-        return response
+        logprobs_value = model_kwargs_wo_logprobs.pop('logprobs', None)
+        
+        # Convert to chat format
+        all_choices = []
+        for i, prompt in enumerate(prompts):
+            messages = [{"role": "user", "content": str(prompt)}]
+            
+            # Add logprobs if requested
+            api_kwargs = model_kwargs_wo_logprobs.copy()
+            if return_logprobs and logprobs_value:
+                api_kwargs["logprobs"] = True
+                api_kwargs["top_logprobs"] = min(logprobs_value, 5)  # Max 5 for chat completions
+            
+            response = client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                **api_kwargs
+            )
+            
+            # Format to match legacy structure
+            for choice in response.choices:
+                # Handle logprobs conversion
+                logprobs_data = None
+                if return_logprobs and choice.logprobs and choice.logprobs.content:
+                    tokens = []
+                    top_logprobs = []
+                    
+                    for token_data in choice.logprobs.content:
+                        tokens.append(token_data.token)
+                        # Convert top_logprobs to legacy format
+                        token_logprobs = {}
+                        for top_logprob in token_data.top_logprobs:
+                            token_logprobs[top_logprob.token] = top_logprob.logprob
+                        top_logprobs.append(token_logprobs)
+                    
+                    logprobs_data = {
+                        "tokens": tokens,
+                        "top_logprobs": top_logprobs
+                    }
+                elif return_logprobs:
+                    logprobs_data = {"tokens": [], "top_logprobs": []}
+                
+                all_choices.append({
+                    "text": choice.message.content,
+                    "index": i,
+                    "logprobs": logprobs_data,
+                    "finish_reason": choice.finish_reason
+                })
+        
+        return {
+            "choices": all_choices,
+            "model": self.model,
+            "usage": None  # Could aggregate usage if needed
+        }
 
     def update_memory(self, inputs, prefix="", suffix=""):
 
@@ -135,7 +182,7 @@ class Suspect(LanguageModelAgent):
             prompt,  # lie instruction + lie
             n_parallel,
             split_on="Answer: ",
-            model="text-davinci-003",
+            model="gpt-3.5-turbo",
             prefix="\nQuestion: ",
             suffix="\nAnswer:",
             model_kwargs={
@@ -223,7 +270,7 @@ class DynamicInvestigator(Investigator, LanguageModelAgent):
             max_interactions=4,
             n_parallel=1,
             split_on="Question: ",
-            model="text-davinci-003",
+            model="gpt-3.5-turbo",
             prefix="\nAnswer: ",
             suffix="\nQuestion:",
             model_kwargs={
